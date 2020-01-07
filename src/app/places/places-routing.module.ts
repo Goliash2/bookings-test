@@ -5,7 +5,7 @@ import { PlacesPage } from './places.page';
 
 const routes: Routes = [
   {
-    path: '',
+    path: 'tabs',
     component: PlacesPage,
     children: [
       {
@@ -25,8 +25,18 @@ const routes: Routes = [
             loadChildren: () => import('./offers/offers.module').then( m => m.OffersPageModule)
           }
         ]
+      },
+      {
+        path: '',
+        redirectTo: '/places/tabs/discover',
+        pathMatch: 'full'
       }
     ]
+  },
+  {
+    path: '',
+    redirectTo: '/places/tabs/discover',
+    pathMatch: 'full'
   }
 ];
 
