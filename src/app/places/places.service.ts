@@ -5,7 +5,7 @@ import { Place } from './place.model';
   providedIn: 'root'
 })
 export class PlacesService {
-  private _places: Place = [
+  private _places = [
       new Place(
           'pl1',
           'Lodenice Bosan',
@@ -25,7 +25,7 @@ export class PlacesService {
         'Whitewater crazy place',
         'Wet also in dry suit',
         'https://bosan.cz/assets/img/kanal1.jpg',
-        59.99
+        39.99
     )
   ];
 
@@ -34,4 +34,8 @@ export class PlacesService {
   }
 
   constructor() { }
+
+  getPlace(id: string) {
+    return {...this._places.find(p => p.id === id)};
+  }
 }
