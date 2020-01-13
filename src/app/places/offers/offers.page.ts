@@ -19,5 +19,8 @@ export class OffersPage implements OnInit {
   openMenu() {
     this.menuCtrl.toggle();
   }
+  onEdit(offerId: string) {
+    console.log('editing item: ' + offerId);
+  }
 
 }
