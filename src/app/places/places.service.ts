@@ -5,14 +5,14 @@ import { Place } from './place.model';
   providedIn: 'root'
 })
 export class PlacesService {
-  private _places = [
-      new Place(
-          'pl1',
-          'Lodenice Bosan',
-          'In the heart of Prague',
-          'https://bosan.cz/assets/img/bosan.jpg',
-          149.99
-      ),
+  private innerPlaces = [
+    new Place(
+        'pl1',
+        'Lodenice Bosan',
+        'In the heart of Prague',
+        'https://bosan.cz/assets/img/bosan.jpg',
+        149.99
+    ),
     new Place(
         'pl2',
         'San Island',
@@ -30,12 +30,12 @@ export class PlacesService {
   ];
 
   get places() {
-    return [...this._places];
+    return [...this.innerPlaces];
   }
 
   constructor() { }
 
   getPlace(id: string) {
-    return {...this._places.find(p => p.id === id)};
+    return {...this.innerPlaces.find(p => p.id === id)};
   }
 }
