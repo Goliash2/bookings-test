@@ -1,4 +1,5 @@
 import { Component, OnInit } from '@angular/core';
+import {FormControl, FormGroup, Validators} from '@angular/forms';
 
 @Component({
   selector: 'app-new-offer',
@@ -6,10 +7,46 @@ import { Component, OnInit } from '@angular/core';
   styleUrls: ['./new-offer.page.scss'],
 })
 export class NewOfferPage implements OnInit {
+  form: FormGroup;
 
   constructor() { }
 
   ngOnInit() {
+    this.form = new FormGroup({
+      title: new FormControl(null, {
+        updateOn: 'blur',
+        validators: [Validators.required]
+      }),
+      description: new FormControl(null, {
+        updateOn: 'blur',
+        validators: [Validators.required, Validators.maxLength(180)]
+      }) ,
+      price: new FormControl(null, {
+        updateOn: 'blur',
+        validators: [Validators.required, Validators.min(1)]
+      }),
+      dateFrom: new FormControl(null, {
+        updateOn: 'blur',
+        validators: [Validators.required]
+      }),
+      dateTo: new FormControl(null, {
+        updateOn: 'blur',
+        validators: [Validators.required]
+      }),
+      imageUrl: new FormControl(null, {
+        updateOn: 'blur',
+        validators: [
+          Validators.required,
+          Validators.pattern('^((http|ftp|https):\\/\\/)?([\\w_-]+(?:(?:\\.[\\w_-]+)+))([\\w.,@?^=%&:\\/~+#-]*[\\w@?^=%&\\/~+#-])?$')]
+      })
+    });
+  }
+
+  onCreateOffer() {
+    if (!this.form.valid) {
+      return;
+    }
+    console.log('creating offer...');
   }
 
 }
