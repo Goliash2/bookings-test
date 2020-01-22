@@ -2,7 +2,7 @@ import { Injectable } from '@angular/core';
 import { Place } from './place.model';
 import {AuthService} from '../auth/auth.service';
 import {BehaviorSubject} from 'rxjs';
-import {map, take} from 'rxjs/operators';
+import {delay, map, take, tap} from 'rxjs/operators';
 
 @Injectable({
   providedIn: 'root'
@@ -45,7 +45,7 @@ export class PlacesService {
     return this.innerPlaces.asObservable();
   }
 
-  constructor(private authService: AuthService) { }
+  constructor(private authService: AuthService) {}
 
   getPlace(id: string) {
     return this.places.pipe(take(1), map(places => {
@@ -71,8 +71,65 @@ export class PlacesService {
             dateTo,
             this.authService.userId
     );
-    this.places.pipe(take(1)).subscribe(places => {
-      this.innerPlaces.next(places.concat(newPlace));
-    });
+    return this.places.pipe(take(1), delay(1000), tap(places => { // Faking loading with delay...
+        this.innerPlaces.next(places.concat(newPlace));
+    }));
   }
+
+  updatePlace(
+      placeId: string,
+      title: string,
+      description: string,
+      imageUrl: string,
+      price: number,
+      dateFrom: Date,
+      dateTo: Date
+  ) {
+    return this.places.pipe(
+        take(1),
+        delay(1000),
+        tap(
+            places => {
+              const updatedPlaceIndex = places.findIndex(pl => pl.id === placeId);
+              const updatedPlaces = [...places];
+              const oldPlace = updatedPlaces[updatedPlaceIndex];
+              updatedPlaces[updatedPlaceIndex] = new Place(
+                  placeId,
+                  title,
+                  description,
+                  imageUrl,
+                  +price,
+                  new Date(dateFrom),
+                  new Date(dateTo),
+                  oldPlace.userId
+              );
+              this.innerPlaces.next(updatedPlaces);
+            }
+        )
+    );
+  }
+
+  // editPlace(
+  //     id: string,
+  //     title: string,
+  //     description: string,
+  //     imageUrl: string,
+  //     price: number,
+  //     dateFrom: Date,
+  //     dateTo: Date
+  // ) {
+  //   const editedPlace = new Place(
+  //       id,
+  //       title,
+  //       description,
+  //       imageUrl,
+  //       price,
+  //       dateFrom,
+  //       dateTo,
+  //       this.authService.userId
+  //   );
+  //   return this.places.pipe(filter(p => p.target.id === editedPlace.id), delay(1000), tap(places => { // Faking loading with delay...
+  //     this.innerPlaces.next(places.concat(newPlace));
+  //   }));
+  // }
 }
