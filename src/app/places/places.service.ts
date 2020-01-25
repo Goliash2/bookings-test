@@ -2,50 +2,59 @@ import { Injectable } from '@angular/core';
 import { Place } from './place.model';
 import {AuthService} from '../auth/auth.service';
 import {BehaviorSubject} from 'rxjs';
-import {delay, map, take, tap} from 'rxjs/operators';
+import {delay, map, switchMap, take, tap} from 'rxjs/operators';
+import {HttpClient} from '@angular/common/http';
+
+interface PlaceData {
+    dateFrom: string;
+    dateTo: string;
+    description: string;
+    imageUrl: string;
+    price: number;
+    title: string;
+    userId: string;
+}
 
 @Injectable({
   providedIn: 'root'
 })
 export class PlacesService {
-  private innerPlaces = new BehaviorSubject<Place[]>([
-    new Place(
-        'pl1',
-        'Lodenice Bosan',
-        'In the heart of Prague',
-        'https://bosan.cz/assets/img/bosan.jpg',
-        149.99,
-        new Date('2020-01-19'),
-        new Date('2021-12-12'),
-        'abc'
-    ),
-    new Place(
-        'pl2',
-        'San Island',
-        'With some spiders and otters included',
-        'https://bosan.cz/data/photos/5d42e051439f3e2b3862cbd4/5d5c5785af43524e762e6fc1_small.JPG',
-        59.99,
-        new Date('2019-12-11'),
-        new Date('2022-03-31'),
-        'yax'
-    ),
-    new Place(
-        'pl3',
-        'Whitewater crazy place',
-        'Wet also in dry suit',
-        'https://bosan.cz/assets/img/kanal1.jpg',
-        39.99,
-        new Date('2020-03-11'),
-        new Date('2025-05-17'),
-        'abc'
-    )
-  ]) ;
+  private innerPlaces = new BehaviorSubject<Place[]>([]) ;
 
   get places() {
     return this.innerPlaces.asObservable();
   }
 
-  constructor(private authService: AuthService) {}
+  constructor(private authService: AuthService, private httpClient: HttpClient) {}
+
+  fetchPlaces() {
+      return this.httpClient
+          .get<{[key: string]: PlaceData }>('https://bookings-test-190d2.firebaseio.com/offered-places.json')
+          .pipe(map(resData => {
+              const places = [];
+              for (const  key in resData) {
+                  if (resData.hasOwnProperty(key)) {
+                      places.push(
+                          new Place(
+                              key,
+                              resData[key].title,
+                              resData[key].description,
+                              resData[key].imageUrl,
+                              resData[key].price,
+                              new Date(resData[key].dateFrom),
+                              new Date(resData[key].dateTo),
+                              resData[key].userId
+                          )
+                      );
+                  }
+              }
+              return places;
+          }),
+              tap(places => {
+                  this.innerPlaces.next(places);
+              })
+          );
+  }
 
   getPlace(id: string) {
     return this.places.pipe(take(1), map(places => {
@@ -61,7 +70,8 @@ export class PlacesService {
       dateFrom: Date,
       dateTo: Date
   ) {
-    const newPlace = new Place(
+      let generatedId: string;
+      const newPlace = new Place(
         Math.random().toString(),
             title,
             description,
@@ -71,9 +81,22 @@ export class PlacesService {
             dateTo,
             this.authService.userId
     );
-    return this.places.pipe(take(1), delay(1000), tap(places => { // Faking loading with delay...
-        this.innerPlaces.next(places.concat(newPlace));
-    }));
+      return this.httpClient
+        .post<{name: string}>('https://bookings-test-190d2.firebaseio.com/offered-places.json', { ...newPlace, id: null})
+        .pipe(
+            switchMap(resData => {
+                generatedId = resData.name;
+                return this.places;
+            }),
+            take(1),
+            tap(places => {
+                newPlace.id = generatedId;
+                this.innerPlaces.next(places.concat(newPlace));
+            })
+        );
+    // return this.places.pipe(take(1), delay(1000), tap(places => { // Faking loading with delay...
+    //     this.innerPlaces.next(places.concat(newPlace));
+    // }));
   }
 
   updatePlace(
