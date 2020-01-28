@@ -2,7 +2,7 @@ import { Injectable } from '@angular/core';
 import { Place } from './place.model';
 import {AuthService} from '../auth/auth.service';
 import {BehaviorSubject} from 'rxjs';
-import {delay, map, switchMap, take, tap} from 'rxjs/operators';
+import {map, switchMap, take, tap} from 'rxjs/operators';
 import {HttpClient} from '@angular/common/http';
 
 interface PlaceData {
@@ -56,11 +56,24 @@ export class PlacesService {
           );
   }
 
-  getPlace(id: string) {
-    return this.places.pipe(take(1), map(places => {
-      return {...places.find(p => p.id === id)};
-    }));
-  }
+    getPlace(id: string) {
+        return this.httpClient
+            .get<PlaceData>(`https://bookings-test-190d2.firebaseio.com/offered-places/${id}.json`)
+            .pipe(
+                map(placeData => {
+                    return new Place(
+                        id,
+                        placeData.title,
+                        placeData.description,
+                        placeData.imageUrl,
+                        placeData.price,
+                        new Date(placeData.dateFrom),
+                        new Date(placeData.dateTo),
+                        placeData.userId
+                    );
+                })
+            );
+    }
 
   addPlace(
       title: string,
@@ -108,16 +121,15 @@ export class PlacesService {
       dateFrom: Date,
       dateTo: Date
   ) {
-    return this.places.pipe(
-        take(1),
-        delay(1000),
-        tap(
-            places => {
+      let updatedPlaces: Place[];
+      return this.places.pipe(
+          take(1),
+          switchMap(places => {
               const updatedPlaceIndex = places.findIndex(pl => pl.id === placeId);
-              const updatedPlaces = [...places];
+              updatedPlaces = [...places];
               const oldPlace = updatedPlaces[updatedPlaceIndex];
               updatedPlaces[updatedPlaceIndex] = new Place(
-                  placeId,
+                  oldPlace.id,
                   title,
                   description,
                   imageUrl,
@@ -126,10 +138,15 @@ export class PlacesService {
                   new Date(dateTo),
                   oldPlace.userId
               );
+              return this.httpClient.put(
+                  `https://bookings-test-190d2.firebaseio.com/offered-places/${placeId}.json`,
+                  {...updatedPlaces[updatedPlaceIndex], id: null}
+              );
+          }),
+          tap(() => {
               this.innerPlaces.next(updatedPlaces);
-            }
-        )
-    );
+          })
+      );
   }
 
   // editPlace(
